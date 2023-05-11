@@ -126,6 +126,10 @@ local function handleCommands()
     while true do
         local command = {os.pullEvent("command")}
         if command[3] == "pay" and command[5].ownerOnly then
+            if command[4][1] == "--update" then
+            shell.run("wget https://raw.githubusercontent.com/scmcgowen/carrotpay/main/carrotpay.lua "..shell.getRunningProgram)
+            os.reboot()
+            end
             if not command[4][1] then
                 chatbox.tell(command[2],"Specify who to pay","&6CarrotPay")
             elseif not command[4][2] then
