@@ -264,15 +264,12 @@ local function handleCommands()
             else
             chatbox.tell(command[4][1],owner.." wants <:kst:665040403224985611>"..command[4][2].." from you.\nPay to "..address.."\nMessage: "..msg,"&6CarrotPay")
             end
-<<<<<<< HEAD
             chatbox.tell(owner,"Requested <:kst:665040403224985611>"..command[4][2].." from "..command[4][1],"&6CarrotPay")
-=======
-            chatbox.tell(owner,"Requested K"..command[4][2].." from "..command[4][1],"&6CarrotPay")
         elseif (command[3] == "bal" or command[3] == "balance") and command[5].ownerOnly then
             local addr = command[4][1] or address
             local bal = get_balance(addr)
             chatbox.tell(owner,addr.." has a balance of <:kst:665040403224985611>"..bal,"&6CarrotPay")
->>>>>>> a17a82e... Add ^bal  and fix a few issues
+
         end
     end
 end
