@@ -207,7 +207,7 @@ local function handleWebSockets()
                 until c.type == "response"
                 os.queueEvent("transaction_complete",c.ok)
             end
-        ends
+        end
     end
 end
 local function handleCommands()
