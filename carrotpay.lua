@@ -67,6 +67,7 @@ if not pkey then
     os.pullEvent("key")
     os.reboot()
 end
+prt = require("cc.pretty").pretty_print
 local owner =chatbox.getLicenseOwner()
 local function makeaddressbyte(byte)
     local byte = 48 + math.floor(byte/7)
@@ -111,11 +112,16 @@ end
 local address = make_address(pkey)
 local function get_balance(addr)
     os.queueEvent("get_balance",addr)
-    _,balance = os.pullEvent("balance")
+    _,balance,err = os.pullEvent("balance")
+    if balance == "error" then
+        prt(err)
+        return -1
+    end
     return balance
 end
 local function pay(to,amt,mta)
     if not mta then mta = "" end
+    mta = "username="..owner..";"..mta
     amt = tonumber(amt)
     local bal = get_balance(address)
     if amt > bal then
@@ -134,7 +140,8 @@ local function handleWebSockets()
     r.close()
     r = nil
     if  resp.ok then
-        local socket = http.websocket(resp.url)
+        socket = http.websocket(resp.url)
+        print("Connected to Krist Websockets")
         id = id + 1
         socket.send('{\"id\":'..id ..',\"type\":\"subscribe\",\"event\":\"ownTransactions\"}')
         while true do
@@ -146,6 +153,7 @@ local function handleWebSockets()
                         local from = wsevent.transaction.from
                         local hasMessage = false
                         local hasError = false
+                        local hasUsername = false
                         local message = ""
                         err = ""
                         if wsevent.transaction.metadata then
@@ -159,8 +167,9 @@ local function handleWebSockets()
                                     err = split(p,"=")[2]
                                     hasError = true
                                 end
-                                if p:match("username") then
+                                if p:match("username") and not hasUsername then
                                     from = split(p,"=")[2].." ("..wsevent.transaction.from..")"
+                                    hasUsername = true
                                 end
                             end
                         end
@@ -188,7 +197,11 @@ local function handleWebSockets()
                 socket.send(textutils.serialiseJSON(rq))
                 rspt =socket.receive()
                 rsp = textutils.unserialiseJSON(rspt)
-                os.queueEvent("balance",rsp.address.balance)
+                if rsp.ok then
+                    os.queueEvent("balance",rsp.address.balance)
+                else
+                    os.queueEvent("balance","error",rsp)
+                end
 
             elseif event[1] == "make_transaction" then
                 id = id + 1
@@ -251,8 +264,18 @@ local function handleCommands()
             else
             chatbox.tell(command[4][1],owner.." wants <:kst:665040403224985611>"..command[4][2].." from you.\nPay to "..address.."\nMessage: "..msg,"&6CarrotPay")
             end
+<<<<<<< HEAD
             chatbox.tell(owner,"Requested <:kst:665040403224985611>"..command[4][2].." from "..command[4][1],"&6CarrotPay")
+=======
+            chatbox.tell(owner,"Requested K"..command[4][2].." from "..command[4][1],"&6CarrotPay")
+        elseif (command[3] == "bal" or command[3] == "balance") and command[5].ownerOnly then
+            local addr = command[4][1] or address
+            local bal = get_balance(addr)
+            chatbox.tell(owner,addr.." has a balance of <:kst:665040403224985611>"..bal,"&6CarrotPay")
+>>>>>>> a17a82e... Add ^bal  and fix a few issues
         end
     end
 end
-parallel.waitForAny(handleWebSockets,handleCommands)
+_,e = pcall(parallel.waitForAny,handleWebSockets,handleCommands)
+if socket then socket.close() end
+printError(e)
