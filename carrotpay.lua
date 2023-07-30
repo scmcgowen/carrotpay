@@ -228,6 +228,7 @@ local function handleCommands()
         local command = {os.pullEvent("command")}
         if command[3] == "pay" and command[5].ownerOnly then
             if command[4][1] == "--update" then
+                fs.delete(shell.getRunningProgram())
                 shell.run("wget https://raw.githubusercontent.com/scmcgowen/carrotpay/main/carrotpay.lua "..shell.getRunningProgram())
                 os.reboot()
             end
