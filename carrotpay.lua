@@ -5,67 +5,67 @@ end
 sleep(1)
 local sha256 = require("sha256")
 if not chatbox or not chatbox.hasCapability("command") or not chatbox.hasCapability("tell") then
-    term.setBackgroundColor(colors.black)
-    term.clear()
-    term.setCursorPos(1,1)
-    term.setTextColor(colors.white)
-    print("Hey! it seems like you haven't registered chatbox")
-    print("If you don't have a chatbox key, run this command:")
-    term.setTextColor(colors.green)
-    print("/chatbox register")
-    term.setTextColor(colors.white)
-    print("Then copy that key and paste it here")
-    write("Alternatively, run ")
-    term.setTextColor(colors.blue)
-    print("chatbox register <key>")
-    term.setTextColor(colors.white)
-    local cbkey = read()
-    settings.set("chatbox.license_key",cbkey)
-    settings.save(".settings")
-    print("Key set. Press Any Key to reboot")
-    os.pullEvent("key")
-    os.reboot()
+term.setBackgroundColor(colors.black)
+term.clear()
+term.setCursorPos(1,1)
+term.setTextColor(colors.white)
+print("Hey! it seems like you haven't registered chatbox")
+print("If you don't have a chatbox key, run this command:")
+term.setTextColor(colors.green)
+print("/chatbox register")
+term.setTextColor(colors.white)
+print("Then copy that key and paste it here")
+write("Alternatively, run ")
+term.setTextColor(colors.blue)
+print("chatbox register <key>")
+term.setTextColor(colors.white)
+local cbkey = read()
+settings.set("chatbox.license_key",cbkey)
+settings.save(".settings")
+print("Key set. Press Any Key to reboot")
+os.pullEvent("key")
+os.reboot()
 end
 if not pkey then
-    term.setBackgroundColor(colors.black)
-    term.setTextColor(colors.white)
-    term.clear()
-    term.setCursorPos(1,1)
-    term.setBackgroundColor(colors.lightGray)
-    print("Initial Setup                                      ")
-    term.setBackgroundColor(colors.black)
-    print("First, CarrotPay needs your private key")
-    print("for the wallet you wish to use with CarrotPay")
-    print("Please enter your private key (not password) here")
-    local ipkey = read()
-    settings.set("carrotpay.private_key",ipkey)
-    settings.save(".settings")
-    term.clear()
-    term.setCursorPos(1,1)
-    term.setBackgroundColor(colors.lightGray)
-    print("Initial Setup                                       ")
-    term.setBackgroundColor(colors.black)
-    print("Do you want to use our default startup script?")
-    print("(Y/N)")
-    print("Typing anything other than Y will be treated as no")
-    term.setTextColor(colors.red)
-    print("WARNING! Saying yes will OVERWRITE startup.lua")
-    term.setTextColor(colors.white)
-    local event = {os.pullEvent("key")}
-    if event[2] == keys.y then
-        print("Overwrote startup file.")
-        fs.delete("startup.lua")
-        local file = fs.open("startup.lua","w")
-        file.write([=[while true do
-        shell.run("]=]..shell.getRunningProgram()..[=[")
-        sleep(2)
-        end]=])
-        file.close()
-    end
-    print("CarrotPay Setup Requires a reboot.")
-    print("Press any key to reboot")
-    os.pullEvent("key")
-    os.reboot()
+term.setBackgroundColor(colors.black)
+term.setTextColor(colors.white)
+term.clear()
+term.setCursorPos(1,1)
+term.setBackgroundColor(colors.lightGray)
+print("Initial Setup                                      ")
+term.setBackgroundColor(colors.black)
+print("First, CarrotPay needs your private key")
+print("for the wallet you wish to use with CarrotPay")
+print("Please enter your private key (not password) here")
+local ipkey = read()
+settings.set("carrotpay.private_key",ipkey)
+settings.save(".settings")
+term.clear()
+term.setCursorPos(1,1)
+term.setBackgroundColor(colors.lightGray)
+print("Initial Setup                                       ")
+term.setBackgroundColor(colors.black)
+print("Do you want to use our default startup script?")
+print("(Y/N)")
+print("Typing anything other than Y will be treated as no")
+term.setTextColor(colors.red)
+print("WARNING! Saying yes will OVERWRITE startup.lua")
+term.setTextColor(colors.white)
+local event = {os.pullEvent("key")}
+if event[2] == keys.y then
+print("Overwrote startup file.")
+fs.delete("startup.lua")
+local file = fs.open("startup.lua","w")
+file.write([=[while true do
+shell.run("]=]..shell.getRunningProgram()..[=[")
+sleep(2)
+end]=])
+file.close()
+end
+print("CarrotPay Setup Requires a reboot.")
+print("Press any key to reboot")
+os.pullEvent("key")
+os.reboot()
 end
 prt = require("cc.pretty").pretty_print
 local owner =chatbox.getLicenseOwner()
@@ -195,8 +195,10 @@ local function handleWebSockets()
                     address=event[2]
                 } 
                 socket.send(textutils.serialiseJSON(rq))
+                repeat
                 rspt =socket.receive()
                 rsp = textutils.unserialiseJSON(rspt)
+                until rsp.type == "response"
                 if rsp.ok then
                     os.queueEvent("balance",rsp.address.balance)
                 else
@@ -240,7 +242,7 @@ local function handleCommands()
                 command_copy = {table.unpack(command)}
                 mta = table.concat({select(3, unpack(command_copy[4]))}, " ")
                 local s = command[4][1]
-                if ((s:match("^k[a-z0-9]+$") or s:match("^[a-f0-9]+$")) and #s == 10) or (s:match("^[a-z0-9]@[a-z0-9]+$")) or s:match("^[%a%d]+@[%a%d]+%.kst$") or s:match("^[%a%d]+%.kst") then
+                if (s:match("^k[a-z0-9]+$") and #s == 10) or s:match("^[%a%d]+@[%a%d]+%.kst$") or s:match("^[%a%d]+%.kst") then
                     c = pay(s,command[4][2],mta)
                     if c then
                         chatbox.tell(command[2],"Paid <:kst:665040403224985611>"..command[4][2].." to "..s,"&6CarrotPay")
@@ -249,7 +251,10 @@ local function handleCommands()
                     c = pay(s.."@sc.kst",command[4][2],mta)
                     if c then
                         chatbox.tell(command[2],"Paid <:kst:665040403224985611>"..command[4][2] .. " to "..s,"&6CarrotPay")
+
                     end
+                
+
                 else
                     chatbox.tell(command[2],"Invalid Krist Address","&6CarrotPay")
                 end
@@ -260,16 +265,15 @@ local function handleCommands()
         elseif command[3] == "request" and command[5].ownerOnly then
             msg = table.concat({select(3,unpack(command[4]))}, " ")
             if msg == "" then
-            chatbox.tell(command[4][1],owner.." wants <:kst:665040403224985611>"..command[4][2].." from you.\nPay to "..address,"&6CarrotPay")
+            chatbox.tell(command[4][1],owner.." wants K"..command[4][2].." from you.\nPay to "..address,"&6CarrotPay")
             else
-            chatbox.tell(command[4][1],owner.." wants <:kst:665040403224985611>"..command[4][2].." from you.\nPay to "..address.."\nMessage: "..msg,"&6CarrotPay")
+            chatbox.tell(command[4][1],owner.." wants K"..command[4][2].." from you.\nPay to "..address.."\nMessage: "..msg,"&6CarrotPay")
             end
-            chatbox.tell(owner,"Requested <:kst:665040403224985611>"..command[4][2].." from "..command[4][1],"&6CarrotPay")
+            chatbox.tell(owner,"Requested K"..command[4][2].." from "..command[4][1],"&6CarrotPay")
         elseif (command[3] == "bal" or command[3] == "balance") and command[5].ownerOnly then
             local addr = command[4][1] or address
             local bal = get_balance(addr)
             chatbox.tell(owner,addr.." has a balance of <:kst:665040403224985611>"..bal,"&6CarrotPay")
-
         end
     end
 end
