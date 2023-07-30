@@ -173,7 +173,7 @@ local function handleWebSockets()
                                 end
                             end
                         end
-                        msg2 = "You have received K"..wsevent.transaction.value.." from "..from
+                        msg2 = "You have received <:kst:665040403224985611>"..wsevent.transaction.value.." from "..from
                         if hasMessage or hasError then
                             if hasMessage then
                                 msg2 = msg2.."\nMessage: "..message
@@ -195,8 +195,10 @@ local function handleWebSockets()
                     address=event[2]
                 } 
                 socket.send(textutils.serialiseJSON(rq))
+                repeat
                 rspt =socket.receive()
                 rsp = textutils.unserialiseJSON(rspt)
+                until rsp.type == "response"
                 if rsp.ok then
                     os.queueEvent("balance",rsp.address.balance)
                 else
