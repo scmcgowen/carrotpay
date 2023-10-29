@@ -243,7 +243,7 @@ local function handleCommands()
                 command_copy = {table.unpack(command)}
                 mta = table.concat({select(3, unpack(command_copy[4]))}, " ")
                 local s = command[4][1]
-                if ((s:match("^k[a-z0-9]+$") or s:match("^[a-f0-9]+$")) and #s == 10) or (s:match("^[a-z0-9]@[a-z0-9]+$")) or s:match("^[%a%d]+@[%a%d]+%.kst$") or s:match("^[%a%d]+%.kst") then
+                if (s:match("^k[a-z0-9]+$") and #s == 10) or s:match("^[%a%d_-]+@[%a%d]+%.kst$") or s:match("^[%a%d]+%.kst") then
                     c = pay(s,command[4][2],mta)
                     if c then
                         chatbox.tell(command[2],"Paid <:kst:665040403224985611>"..command[4][2].." to "..s,"&6CarrotPay")
