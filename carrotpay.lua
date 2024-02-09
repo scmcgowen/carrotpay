@@ -121,7 +121,6 @@ local function get_balance(addr)
 end
 local function pay(to,amt,mta)
     if not mta then mta = "" end
-    mta = "username="..owner..";"..mta
     amt = tonumber(amt)
     local bal = get_balance(address)
     if amt > bal then
@@ -240,8 +239,10 @@ local function handleCommands()
                 chatbox.tell(command[2],"Specify how much to pay","&6CarrotPay")
             else
                 local c = false
-                command_copy = {table.unpack(command)}
-                mta = table.concat({select(3, unpack(command_copy[4]))}, " ")
+                local command_copy = {table.unpack(command)}
+                local mta = table.concat({select(3, unpack(command_copy[4]))}, " ")
+                if not mta then mta = "" end
+                mta = "username="..owner..";"..mta
                 local s = command[4][1]
                 if (s:match("^k[a-z0-9]+$") and #s == 10) or s:match("^[%a%d_-]+@[%a%d]+%.kst$") or s:match("^[%a%d]+%.kst") then
                     c = pay(s,command[4][2],mta)
@@ -252,6 +253,27 @@ local function handleCommands()
                     c = pay(s.."@sc.kst",command[4][2],mta)
                     if c then
                         chatbox.tell(command[2],"Paid <:kst:665040403224985611>"..command[4][2] .. " to "..s,"&6CarrotPay")
+                    end
+                elseif s:match("^[a-zA-Z0-9_]+.crt") then
+                    local rq,err = http.get("https://carrotpay.herrkatze.com/address?name="..s)
+                    local addr
+                    if rq then
+                    addr = rq.readAll()
+                    end
+                    rq.close()
+                    rq = nil
+                   
+                    if addr and addr ~= "No address with this name could be found" then
+                        mta = s..";"..mta
+                        c=pay(addr,command[4][2],mta)
+                    elseif addr == "No address with this name could be found" then
+                        c=true -- Suppress There was an error message
+                        chatbox.tell(command[2],"No address found","&6CarrotPay")
+                    else
+                        print(err)
+                    end
+                    if c then
+                        chatbox.tell(command[2],"Paid <:kst:665040403224985611>"..command[4][2].." to "..s,"&6CarrotPay")
                     end
                 else
                     chatbox.tell(command[2],"Invalid Krist Address","&6CarrotPay")
