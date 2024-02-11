@@ -69,6 +69,17 @@ if not pkey then
 end
 prt = require("cc.pretty").pretty_print
 local owner =chatbox.getLicenseOwner()
+local ownerUUID = settings.get("carrotpay.ownerUUID")
+if not ownerUUID then
+local resp,err = http.get("https://api.mojang.com/users/profiles/minecraft/"..owner)
+local r = resp.readAll()
+resp.close()
+resp = nil
+ownerUUID = textutils.unserialiseJSON(r).id
+settings.set("carrotpay.ownerUUID",ownerUUID)
+settings.save()
+end
+
 local function makeaddressbyte(byte)
     local byte = 48 + math.floor(byte/7)
     return string.char(byte + 39 > 122 and 101 or byte > 57 and byte + 39 or byte)
@@ -242,7 +253,7 @@ local function handleCommands()
                 local command_copy = {table.unpack(command)}
                 local mta = table.concat({select(3, unpack(command_copy[4]))}, " ")
                 if not mta then mta = "" end
-                mta = "username="..owner..";"..mta
+                mta = "username="..owner..";".."useruuid="..ownerUUID..";"..mta
                 local s = command[4][1]
                 if (s:match("^k[a-z0-9]+$") and #s == 10) or s:match("^[%a%d_-]+@[%a%d]+%.kst$") or s:match("^[%a%d]+%.kst") then
                     c = pay(s,command[4][2],mta)
