@@ -265,8 +265,12 @@ local function handleCommands()
                     if c then
                         chatbox.tell(command[2],"Paid <:kst:665040403224985611>"..command[4][2] .. " to "..s,"&6CarrotPay")
                     end
-                elseif s:match("^[a-zA-Z0-9_]+.crt") then
-                    local rq,err = http.get("https://carrotpay.herrkatze.com/address?name="..s)
+                elseif s:match("^[a-zA-Z0-9_]+.crt") or s:match("^[a-zA-Z0-9_]+@[a-zA-Z0-9_]+.crt") then
+                    local baseName = s
+                    if s:match("@") then
+                        baseName = split(s,"@")[2]
+                    end
+                    local rq,err = http.get("https://carrotpay.herrkatze.com/address?name="..baseName)
                     local addr
                     if rq then
                     addr = rq.readAll()
