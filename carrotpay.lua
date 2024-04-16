@@ -132,6 +132,18 @@ local function get_balance(addr)
 end
 local function pay(to,amt,mta)
     if not mta then mta = "" end
+    -- Integration with ShreksHellraiser's lotto
+    if to == "lotto@gambling.kst" then
+        if not mta:find("number=") then
+            local number = math.random(0,9999)
+            local number = string.format("%04d",number)
+            mta = "number="..number..";"..mta
+        end
+        if not mta:find("length=") and not mta:find("donate=true") then --
+            mta = "length="..amt..";"..mta
+        end
+    end
+    --End Integration
     amt = tonumber(amt)
     local bal = get_balance(address)
     if amt > bal then
