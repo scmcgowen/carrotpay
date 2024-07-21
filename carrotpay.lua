@@ -68,17 +68,8 @@ if not pkey then
     os.reboot()
 end
 prt = require("cc.pretty").pretty_print
-local owner =chatbox.getLicenseOwner()
-local ownerUUID = settings.get("carrotpay.ownerUUID")
-if not ownerUUID then
-local resp,err = http.get("https://api.mojang.com/users/profiles/minecraft/"..owner)
-local r = resp.readAll()
-resp.close()
-resp = nil
-ownerUUID = textutils.unserialiseJSON(r).id
-settings.set("carrotpay.ownerUUID",ownerUUID)
-settings.save()
-end
+local owner,obj =chatbox.getLicenseOwner()
+local ownerUUID = obj.uuid
 
 local function makeaddressbyte(byte)
     local byte = 48 + math.floor(byte/7)
@@ -121,14 +112,50 @@ local function make_address(key)
   return v2
 end
 local address = make_address(pkey)
-local function get_balance(addr)
-    os.queueEvent("get_balance",addr)
-    _,balance,err = os.pullEvent("balance")
-    if balance == "error" then
-        prt(err)
-        return -1
+local function getName(s)
+    if s:match("^[%a%d]+%.kst") then
+        name = s:gsub("%.kst","")
+        local resp,err = http.get("https://krist.dev/names/"..name)
+        local balance
+        if resp then
+            local response = textutils.unserialiseJSON(resp.readAll())
+            resp.close()
+            if response.ok then
+                return response.name.owner,true
+            else
+                return nil,false,response.message
+            end
+        end
+    elseif s:match("^[a-zA-Z0-9_]+.crt") then
+        local resp,err = http.get("https://carrotpay.herrkatze.com/v2/address?name="..s)
+        if resp then 
+            local response = resp.readAll()
+            if response:match("^k[%a%d]+") and #response == 10 then
+                return response,true
+            else
+                return nil,false,response
+            end
+        end
     end
-    return balance
+end
+local function get_balance(addr)
+    local ok,err
+    if addr:match("^[%a%d]+%.kst") or addr:match("^[a-zA-Z0-9_]+.crt") then
+        addr,ok,err = getName(addr)
+        if not ok then return -1,false,err end
+    end
+    local resp,r_err = http.get("https://krist.dev/addresses/"..addr)
+    local balance
+    if resp then
+        local response = textutils.unserialiseJSON(resp.readAll())
+        resp.close()
+        if response.ok then
+        return response.address.balance,true
+        else
+            return -1,false,response.message
+        end
+    end
+    return -1,false,"An unknown error has occurred, please try again"
 end
 local function pay(to,amt,mta)
     if not mta then mta = "" end
@@ -139,7 +166,7 @@ local function pay(to,amt,mta)
             local number = string.format("%04d",number)
             mta = "number="..number..";"..mta
         end
-        if not mta:find("length=") and not mta:find("donate=true") then --
+        if not mta:find("length=") and not mta:find("donate=true") then 
             mta = "length="..amt..";"..mta
         end
     end
@@ -155,6 +182,10 @@ local function pay(to,amt,mta)
         return ok
     end
 end
+
+
+            
+
 local function handleWebSockets()
     local id = -1
     local r = http.post("https://krist.dev/ws/start","{\"privatekey\":\""..pkey.."\"}",{["content-type"]="application/json"})
@@ -209,23 +240,7 @@ local function handleWebSockets()
                     else
                     end
                 end
-            elseif event[1] == "get_balance" then
-                id = id + 1
-                local rq = {
-                    id = id,
-                    type="address",
-                    address=event[2]
-                } 
-                socket.send(textutils.serialiseJSON(rq))
-                repeat
-                rspt =socket.receive()
-                rsp = textutils.unserialiseJSON(rspt)
-                until rsp.type == "response"
-                if rsp.ok then
-                    os.queueEvent("balance",rsp.address.balance)
-                else
-                    os.queueEvent("balance","error",rsp)
-                end
+      
 
             elseif event[1] == "make_transaction" then
                 id = id + 1
@@ -319,8 +334,13 @@ local function handleCommands()
             chatbox.tell(owner,"Requested <:kst:665040403224985611>"..command[4][2].." from "..command[4][1],"&6CarrotPay")
         elseif (command[3] == "bal" or command[3] == "balance") and command[5].ownerOnly then
             local addr = command[4][1] or address
-            local bal = get_balance(addr)
-            chatbox.tell(owner,addr.." has a balance of <:kst:665040403224985611>"..bal,"&6CarrotPay")
+            print(addr)
+            local bal,ok,err = get_balance(addr)
+            if ok then
+                chatbox.tell(owner,addr.." has a balance of <:kst:665040403224985611>"..bal,"&6CarrotPay")
+            else
+                chatbox.tell(owner,tostring(err),"&6CarrotPay")
+            end
 
         end
     end
