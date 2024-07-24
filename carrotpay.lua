@@ -346,64 +346,68 @@ local function handleCommands()
             local action = command[4][1]
             local name = command[4][2]
             local addr = command[4][3] -- only applicable to ^crt transfer
-            local name_owner,ok,err = getName(name) -- check if name exists
-            if (action == "purchase" or action == "register") and name then
-                if ok then
-                    chatbox.tell(owner,"Name "..name.." already exists and is owned by "..name_owner)
-                elseif name:match("^[%a%d]+%.kst") then
-                    local bal,bal_ok,err = get_balance(address)
-                    if bal and bal >= 500 then --Make sure you have enough krist to register the name on the kst network
-                        http.post("https://krist.dev/names/"..name:gsub("%.kst",""),textutils.serialiseJSON{privatekey=pkey})
-                        chatbox.tell(owner,"Successfully registered "..name)
-                    elseif bal and bal_ok then
-                        chatbox.tell(owner,"Not enough kst to register name.")
-                    elseif not bal_ok then
-                        chatbox.tell(owner,"Error getting balance: "..err)
-                    end
-                elseif name:match("^[a-zA-Z0-9_]+.crt") then
-                    local pay_ok = pay("carrotpay.kst",10,"get_name="..name)
-                    if pay_ok then 
-                        sleep(0.5)
-                        local name_owner2,ok2,err = getName(name) -- Check if the name got properly registered
-                        if not ok2 then
-                            chatbox.tell(owner,"crt Name Server error, please ping @herrkatze0658")
+            if name then
+                local name_owner,ok,err = getName(name) -- check if name exists
+                if (action == "purchase" or action == "register") and name then
+                    if ok then
+                        chatbox.tell(owner,"Name "..name.." already exists and is owned by "..name_owner)
+                    elseif name:match("^[%a%d]+%.kst") then
+                        local bal,bal_ok,err = get_balance(address)
+                        if bal and bal >= 500 then --Make sure you have enough krist to register the name on the kst network
+                            http.post("https://krist.dev/names/"..name:gsub("%.kst",""),textutils.serialiseJSON{privatekey=pkey})
+                            chatbox.tell(owner,"Successfully registered "..name)
+                        elseif bal and bal_ok then
+                            chatbox.tell(owner,"Not enough kst to register name.")
+                        elseif not bal_ok then
+                            chatbox.tell(owner,"Error getting balance: "..err)
                         end
+                    elseif name:match("^[a-zA-Z0-9_]+.crt") then
+                        local pay_ok = pay("carrotpay.kst",10,"get_name="..name)
+                        if pay_ok then 
+                            sleep(0.5)
+                            local name_owner2,ok2,err = getName(name) -- Check if the name got properly registered
+                            if not ok2 then
+                                chatbox.tell(owner,"crt Name Server error, please ping @herrkatze0658")
+                            end
+                        end
+                    else
+                        chatbox.tell(owner,"Name invalid, please check your input and include .kst or .crt")
+                    end
+                elseif action == "transfer" and name and addr then
+                    if not ok then
+                        chatbox.tell(owner,"Error: "..err)
+                    elseif name:match("^[%a%d]+%.kst") then
+                        if ok and name_owner == address then --Make sure you have enough krist to register the name on the kst network
+                            http.post("https://krist.dev/names/"..name:gsub("%.kst","").."/transfer",textutils.serialiseJSON{privatekey=pkey,address=addr})
+                            chatbox.tell(owner,"Successfully transferred "..name)
+                        elseif name_owner ~= address then
+                            chatbox.tell(owner,"Error: You do not own "..name)
+                        else
+                            chatbox.tell(owner,"An unknown error occurred")
+                        end
+                    elseif name:match("^[a-zA-Z0-9_]+.crt") then
+                        local pay_ok
+                        if ok and name_owner == address then
+                            pay_ok = pay("carrotpay.kst",1,"name="..name..";transfer_to="..addr)
+                        elseif name_owner ~= address then
+                            chatbox.tell(owner,"Error: You do not own "..name)
+                        else
+                            chatbox.tell(owner,"An unknown error occurred")
+                        end
+                        if pay_ok then 
+                            sleep(0.5)
+                            local name_owner2,ok2,err = getName(name) -- Check if the name got properly transferred
+                            if not ok2 or name_owner2 ~= addr then
+                                chatbox.tell(owner,"Possible crt Name Server error, please ping @herrkatze0658 if no refund appears below")
+                            end
+                        elseif name_owner == address then
+                            chatbox.tell(owner,"Failed to transfer name, 1 kst is required to transfer a name due to technical limitations, it will be refunded.")
+                        end
+                    else
+                        chatbox.tell(owner,"Name invalid, please check your input and include .kst or .crt")
                     end
                 else
-                    chatbox.tell(owner,"Name invalid, please check your input and include .kst or .crt")
-                end
-            elseif action == "transfer" and name and addr then
-                if not ok then
-                    chatbox.tell(owner,"Error: "..err)
-                elseif name:match("^[%a%d]+%.kst") then
-                    if ok and name_owner == address then --Make sure you have enough krist to register the name on the kst network
-                        http.post("https://krist.dev/names/"..name:gsub("%.kst","").."/transfer",textutils.serialiseJSON{privatekey=pkey,address=addr})
-                        chatbox.tell(owner,"Successfully transferred "..name)
-                    elseif name_owner ~= address then
-                        chatbox.tell(owner,"Error: You do not own "..name)
-                    else
-                        chatbox.tell(owner,"An unknown error occurred")
-                    end
-                elseif name:match("^[a-zA-Z0-9_]+.crt") then
-                    local pay_ok
-                    if ok and name_owner == address then
-                        pay_ok = pay("carrotpay.kst",1,"name="..name..";transfer_to="..addr)
-                    elseif name_owner ~= address then
-                        chatbox.tell(owner,"Error: You do not own "..name)
-                    else
-                        chatbox.tell(owner,"An unknown error occurred")
-                    end
-                    if pay_ok then 
-                        sleep(0.5)
-                        local name_owner2,ok2,err = getName(name) -- Check if the name got properly transferred
-                        if not ok2 or name_owner2 ~= addr then
-                            chatbox.tell(owner,"Possible crt Name Server error, please ping @herrkatze0658 if no refund appears below")
-                        end
-                    elseif name_owner == address then
-                        chatbox.tell(owner,"Failed to transfer name, 1 kst is required to transfer a name due to technical limitations, it will be refunded.")
-                    end
-                else
-                    chatbox.tell(owner,"Name invalid, please check your input and include .kst or .crt")
+                    chatbox.tell(owner,"Usage: ^name register <name> or ^name transfer <name> <address>")
                 end
             else
                 chatbox.tell(owner,"Usage: ^name register <name> or ^name transfer <name> <address>")
