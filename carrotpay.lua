@@ -2,6 +2,8 @@ local pkey = settings.get("carrotpay.private_key")
 if not switchcraft then
     error("Must run on SwitchCraft 3")
 end
+
+
 sleep(1)
 local sha256 = require("sha256")
 if not chatbox or not chatbox.hasCapability("command") or not chatbox.hasCapability("tell") then
@@ -175,7 +177,7 @@ local function pay(to,amt,mta)
     amt = tonumber(amt)
     local bal = get_balance(address)
     if amt > bal then
-        chatbox.tell(owner,"Transaction failed. Not enough Krist","&6CarrotPay")
+        chatbox.tell(owner,"&cTransaction failed. Not enough Krist","&6CarrotPay","format")
         return false
     else
         os.queueEvent("make_transaction",to,amt,mta)
@@ -227,16 +229,16 @@ local function handleWebSockets()
                                 end
                             end
                         end
-                        msg2 = "You have received <:kst:665040403224985611>"..wsevent.transaction.value.." from "..from
+                        msg2 = "&a have received &6K"..wsevent.transaction.value.."&a from &6"..from
                         if hasMessage or hasError then
                             if hasMessage then
-                                msg2 = msg2.."\nMessage: "..message
+                                msg2 = msg2.."&a\nMessage:&6 "..message
                             end
                             if hasError then
-                                msg2 = msg2.."\nError: "..err
+                                msg2 = msg2.."&c\nError: "..err
                             end
                         end
-                        chatbox.tell(owner,msg2,"&6CarrotPay")
+                        chatbox.tell(owner,msg2,"&6CarrotPay","format")
                     elseif wsevent.type == "keepalive" or wsevent.type == "response" then
                     else
                     end
@@ -273,9 +275,9 @@ local function handleCommands()
                 os.reboot()
             end
             if not command[4][1] then
-                chatbox.tell(command[2],"Specify who to pay","&6CarrotPay")
+                chatbox.tell(command[2],"&cSpecify who to pay","&6CarrotPay","format")
             elseif not command[4][2] then
-                chatbox.tell(command[2],"Specify how much to pay","&6CarrotPay")
+                chatbox.tell(command[2],"&cSpecify how much to pay","&6CarrotPay","format")
             else
                 local c = false
                 local command_copy = {table.unpack(command)}
@@ -286,12 +288,12 @@ local function handleCommands()
                 if (s:match("^k[a-z0-9]+$") and #s == 10) or s:match("^[%a%d_-]+@[%a%d]+%.kst$") or s:match("^[%a%d]+%.kst") then
                     c = pay(s,command[4][2],mta)
                     if c then
-                        chatbox.tell(command[2],"Paid <:kst:665040403224985611>"..command[4][2].." to "..s,"&6CarrotPay")
+                        chatbox.tell(command[2],"&aPaid &6K"..command[4][2].."&a to &6"..s,"&6CarrotPay","format")
                     end
                 elseif s:match("^[a-zA-Z0-9_]+$") and #s <16 then
                     c = pay(s.."@sc.kst",command[4][2],mta)
                     if c then
-                        chatbox.tell(command[2],"Paid <:kst:665040403224985611>"..command[4][2] .. " to "..s,"&6CarrotPay")
+                        chatbox.tell(command[2],"&aPaid &6K"..command[4][2] .. "&a to &6"..s,"&6CarrotPay","format")
                     end
                 elseif s:match("^[a-zA-Z0-9_]+.crt") or s:match("^[a-zA-Z0-9_]+@[a-zA-Z0-9_]+.crt") then
                     local baseName = s
@@ -311,36 +313,36 @@ local function handleCommands()
                         c=pay(addr,command[4][2],mta)
                     elseif addr == "No address with this name could be found" then
                         c=true -- Suppress There was an error message
-                        chatbox.tell(command[2],"No address found","&6CarrotPay")
+                        chatbox.tell(command[2],"&cNo address found","&6CarrotPay","format")
                     else
                         print(err)
                     end
                     if c then
-                        chatbox.tell(command[2],"Paid <:kst:665040403224985611>"..command[4][2].." to "..s,"&6CarrotPay")
+                        chatbox.tell(command[2],"&aPaid &6K"..command[4][2].."&a&a to &6"..s,"&6CarrotPay","format")
                     end
                 else
-                    chatbox.tell(command[2],"Invalid Krist Address","&6CarrotPay")
+                    chatbox.tell(command[2],"&cInvalid Krist Address","&6CarrotPay","format")
                 end
                 if not c then
-                    chatbox.tell(command[2],"There was an error.","&6CarrotPay")
+                    chatbox.tell(command[2],"&cThere was an error.","&6CarrotPay","format")
                 end
             end
         elseif command[3] == "request" and command[5].ownerOnly then
             msg = table.concat({select(3,unpack(command[4]))}, " ")
             if msg == "" then
-            chatbox.tell(command[4][1],owner.." wants <:kst:665040403224985611>"..command[4][2].." from you.\nPay to "..address,"&6CarrotPay")
+            chatbox.tell(command[4][1],"&a"..owner.." wants &6K"..command[4][2].."&a&a from you.\nPay to &6"..address,"&6CarrotPay","format")
             else
-            chatbox.tell(command[4][1],owner.." wants <:kst:665040403224985611>"..command[4][2].." from you.\nPay to "..address.."\nMessage: "..msg,"&6CarrotPay")
+            chatbox.tell(command[4][1],"&a"..owner.." wants &6K"..command[4][2].."&a&a from you.\nPay to &6"..address.."\n&aMessage: "..msg,"&6CarrotPay","format")
             end
-            chatbox.tell(owner,"Requested <:kst:665040403224985611>"..command[4][2].." from "..command[4][1],"&6CarrotPay")
+            chatbox.tell(owner,"Requested &6K"..command[4][2].." f&arom "..command[4][1],"&6CarrotPay")
         elseif (command[3] == "bal" or command[3] == "balance") and command[5].ownerOnly then
             local addr = command[4][1] or address
             print(addr)
             local bal,ok,err = get_balance(addr)
             if ok then
-                chatbox.tell(owner,addr.." has a balance of <:kst:665040403224985611>"..bal,"&6CarrotPay")
+                chatbox.tell(owner,"&a"..addr.." has a balance of &6K"..bal,"&6CarrotPay","format")
             else
-                chatbox.tell(owner,tostring(err),"&6CarrotPay")
+                chatbox.tell(owner,"&c"..tostring(err),"&6CarrotPay","format")
             end
         elseif (command[3] == "crt" or command[3] == "kst" or command[3] == "name") and command[5].ownerOnly then
             local action = command[4][1]
@@ -371,7 +373,7 @@ local function handleCommands()
                             end
                         end
                     else
-                        chatbox.tell(owner,"Name invalid, please check your input and include .kst or .crt")
+                        chatbox.tell(owner,"&cName invalid, please check your input and include .kst or .crt","&6CarrotPay","format")
                     end
                 elseif action == "transfer" and name and addr then
                     if not ok then
@@ -379,38 +381,40 @@ local function handleCommands()
                     elseif name:match("^[%a%d]+%.kst") then
                         if ok and name_owner == address then --Make sure you have enough krist to register the name on the kst network
                             http.post("https://krist.dev/names/"..name:gsub("%.kst","").."/transfer",textutils.serialiseJSON{privatekey=pkey,address=addr})
-                            chatbox.tell(owner,"Successfully transferred "..name)
+                            chatbox.tell(owner,"&aSuccessfully transferred &6"..name,"&6CarrotPay","format")
                         elseif name_owner ~= address then
-                            chatbox.tell(owner,"Error: You do not own "..name)
+                            chatbox.tell(owner,"&cError: You do not own "..name,"&6CarrotPay","format")
                         else
-                            chatbox.tell(owner,"An unknown error occurred")
+                            chatbox.tell(owner,"&cAn unknown error occurred","&6CarrotPay","format")
                         end
                     elseif name:match("^[a-zA-Z0-9_]+.crt") then
                         local pay_ok
                         if ok and name_owner == address then
                             pay_ok = pay("carrotpay.kst",1,"name="..name..";transfer_to="..addr)
                         elseif name_owner ~= address then
-                            chatbox.tell(owner,"Error: You do not own "..name)
+                            chatbox.tell(owner,"&cError: You do not own "..name)
                         else
-                            chatbox.tell(owner,"An unknown error occurred")
+                            chatbox.tell(owner,"&cAn unknown error occurred")
                         end
                         if pay_ok then 
                             sleep(0.5)
                             local name_owner2,ok2,err = getName(name) -- Check if the name got properly transferred
                             if not ok2 or name_owner2 ~= addr then
-                                chatbox.tell(owner,"Possible crt Name Server error, please ping @herrkatze0658 if no refund appears below")
+                                chatbox.tell(owner,"&cPossible crt Name Server error, please ping @herrkatze0658 if no refund appears below","&6CarrotPay","format")
+                            else
+                                chatbox.tell(owner,"&aSuccessfully transferred &6"..name,"&6CarrotPay","format")
                             end
                         elseif name_owner == address then
-                            chatbox.tell(owner,"Failed to transfer name, 1 kst is required to transfer a name due to technical limitations, it will be refunded.")
+                            chatbox.tell(owner,"&cFailed to transfer name, 1 kst is required to transfer a name due to technical limitations, it will be refunded.","&6CarrotPay","format")
                         end
                     else
-                        chatbox.tell(owner,"Name invalid, please check your input and include .kst or .crt")
+                        chatbox.tell(owner,"&cName invalid, please check your input and include .kst or .crt","&6CarrotPay","format")
                     end
                 else
-                    chatbox.tell(owner,"Usage: ^name register <name> or ^name transfer <name> <address>")
+                    chatbox.tell(owner,"&cUsage: ^name register <name> or ^name transfer <name> <address>","&6CarrotPay","format")
                 end
             else
-                chatbox.tell(owner,"Usage: ^name register <name> or ^name transfer <name> <address>")
+                chatbox.tell(owner,"&cUsage: ^name register <name> or ^name transfer <name> <address>","&6CarrotPay","format")
             end
         end
     end
